@@ -1,22 +1,40 @@
 import pickle
+import numpy as np
 import streamlit as st
 from streamlit_option_menu import option_menu
+import time
 
-
-# loading the saved models
+# Load the saved models and scaler
 diabetes_model = pickle.load(
     open(
-        "diabetes_model.sav", "rb"
+        "D:/Xpython/Web App/Multiple Disease Prediction System/diabetes_model.sav", "rb"
     )
 )
-
+diabetes_scaler = pickle.load(
+    open(
+        "D:/Xpython/Web App/Multiple Disease Prediction System/diabetes_scaler.sav",
+        "rb",
+    )
+)
 heart_disease_model = pickle.load(
     open(
-        "Heart_disease_model.sav",
+        "D:/Xpython/Web App/Multiple Disease Prediction System/Heart_disease_model.sav",
         "rb",
     )
 )
 
+# Initialize session state for results and button clicks
+if "diabetes_result" not in st.session_state:
+    st.session_state.diabetes_result = None
+
+if "heart_result" not in st.session_state:
+    st.session_state.heart_result = None
+
+if "diabetes_clicked" not in st.session_state:
+    st.session_state.diabetes_clicked = False
+
+if "heart_clicked" not in st.session_state:
+    st.session_state.heart_clicked = False
 
 # App header
 st.header("Welcome to the Multiple Disease Prediction System")
@@ -33,11 +51,10 @@ with st.sidebar:
         default_index=0,
     )
 
-# Diabetes Prediction page
+# Diabetes Prediction Page
 if selected == "Diabetes Prediction":
     st.title("Diabetes Prediction using ML")
 
-    # Input fields in columns for better layout
     col1, col2 = st.columns(2)
 
     with col1:
@@ -52,41 +69,71 @@ if selected == "Diabetes Prediction":
         BMI = st.text_input("Body Mass Index (BMI)")
         Age = st.text_input("Age")
 
-    diab_diagnosis = ""
-
     # Prediction button
     if st.button("Diabetes Test Result"):
+        st.session_state.diabetes_clicked = True  # Track that button was clicked
+        st.session_state.diabetes_result = None  # Reset result when button is clicked
+
+    # Perform prediction only when button is clicked
+    if st.session_state.diabetes_clicked:
         try:
-            # Convert inputs to float
-            inputs = [
-                float(Pregnancies),
-                float(Glucose),
-                float(BloodPressure),
-                float(SkinThickness),
-                float(Insulin),
-                float(BMI),
-                float(DiabetesPedigreeFunction),
-                float(Age),
-            ]
-
-            # Make prediction
-            diabetes_prediction = diabetes_model.predict([inputs])
-
-            if diabetes_prediction[0] == 1:
-                diab_diagnosis = "The person is Diabetic."
+            # Ensure all fields are filled
+            if any(
+                val.strip() == ""
+                for val in [
+                    Pregnancies,
+                    Glucose,
+                    BloodPressure,
+                    SkinThickness,
+                    Insulin,
+                    BMI,
+                    DiabetesPedigreeFunction,
+                    Age,
+                ]
+            ):
+                st.error("Please fill in all the fields.")
             else:
-                diab_diagnosis = "The person is Non-Diabetic."
+                # Convert inputs
+                inputs = np.asarray(
+                    [
+                        float(Pregnancies),
+                        float(Glucose),
+                        float(BloodPressure),
+                        float(SkinThickness),
+                        float(Insulin),
+                        float(BMI),
+                        float(DiabetesPedigreeFunction),
+                        float(Age),
+                    ]
+                ).reshape(1, -1)
+
+                # Scale input
+                inputs_scaled = diabetes_scaler.transform(inputs)
+
+                # Predict
+                diabetes_prediction = diabetes_model.predict(inputs_scaled)
+
+                # Store result in session state
+                st.session_state.diabetes_result = (
+                    "The person is Diabetic."
+                    if diabetes_prediction[0] == 1
+                    else "The person is Non-Diabetic."
+                )
+
+                # Reset button state after prediction
+                st.session_state.diabetes_clicked = False
 
         except ValueError:
-            diab_diagnosis = "Please enter valid numeric values for all fields."
+            st.error("Please enter valid numeric values for all fields.")
 
-        st.success(diab_diagnosis)
+    # Show the result only if available
+    if st.session_state.diabetes_result:
+        st.success(st.session_state.diabetes_result)
 
-# Heart Disease Prediction page
+
 if selected == "Heart Disease Prediction":
     st.title("Heart Disease Prediction using ML")
 
-    # Input fields in 3 columns
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -108,37 +155,65 @@ if selected == "Heart Disease Prediction":
         ca = st.text_input("Number of Major Vessels Colored by Fluoroscopy (ca)")
         thal = st.text_input("Thalassemia (thal)")
 
-    heart_diagnosis = ""
-
     # Prediction button
     if st.button("Heart Disease Test Result"):
+        st.session_state.heart_clicked = True  # Track button click
+        st.session_state.heart_result = None  # Reset result when button is clicked
+
+    # Perform prediction only when button is clicked
+    if st.session_state.heart_clicked:
         try:
-            # Convert inputs to float
-            inputs = [
-                float(age),
-                float(sex),
-                float(cp),
-                float(trestbps),
-                float(chol),
-                float(fbs),
-                float(restecg),
-                float(thalach),
-                float(exang),
-                float(oldpeak),
-                float(slope),
-                float(ca),
-                float(thal),
-            ]
-
-            # Make prediction
-            heart_prediction = heart_disease_model.predict([inputs])
-
-            if heart_prediction[0] == 1:
-                heart_diagnosis = "The person is likely to have Heart Disease."
+            if any(
+                val.strip() == ""
+                for val in [
+                    age,
+                    sex,
+                    cp,
+                    trestbps,
+                    chol,
+                    fbs,
+                    restecg,
+                    thalach,
+                    exang,
+                    oldpeak,
+                    slope,
+                    ca,
+                    thal,
+                ]
+            ):
+                st.error("Please fill in all the fields.")
             else:
-                heart_diagnosis = "The person is unlikely to have Heart Disease."
+                inputs = [
+                    float(age),
+                    float(sex),
+                    float(cp),
+                    float(trestbps),
+                    float(chol),
+                    float(fbs),
+                    float(restecg),
+                    float(thalach),
+                    float(exang),
+                    float(oldpeak),
+                    float(slope),
+                    float(ca),
+                    float(thal),
+                ]
+
+                # Predict
+                heart_prediction = heart_disease_model.predict([inputs])
+
+                # Store result in session state
+                st.session_state.heart_result = (
+                    "The person is likely to have Heart Disease."
+                    if heart_prediction[0] == 1
+                    else "The person is unlikely to have Heart Disease."
+                )
+
+                # Reset button state after prediction
+                st.session_state.heart_clicked = False
 
         except ValueError:
-            heart_diagnosis = "Please enter valid numeric values for all fields."
+            st.error("Please enter valid numeric values for all fields.")
 
-        st.success(heart_diagnosis)
+    if st.session_state.heart_result:
+        st.success(st.session_state.heart_result)
