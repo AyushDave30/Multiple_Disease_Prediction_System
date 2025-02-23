@@ -7,18 +7,18 @@ import time
 # Load the saved models and scaler
 diabetes_model = pickle.load(
     open(
-        "D:/Xpython/Web App/Multiple Disease Prediction System/diabetes_model.sav", "rb"
+        "diabetes_model.sav", "rb"
     )
 )
 diabetes_scaler = pickle.load(
     open(
-        "D:/Xpython/Web App/Multiple Disease Prediction System/diabetes_scaler.sav",
+        "diabetes_scaler.sav",
         "rb",
     )
 )
 heart_disease_model = pickle.load(
     open(
-        "D:/Xpython/Web App/Multiple Disease Prediction System/Heart_disease_model.sav",
+        "Heart_disease_model.sav",
         "rb",
     )
 )
