@@ -6,13 +6,13 @@ from streamlit_option_menu import option_menu
 # loading the saved models
 diabetes_model = pickle.load(
     open(
-        "D:/Xpython/Web App/Multiple Disease Prediction System/diabetes_model.sav", "rb"
+        "diabetes_model.sav", "rb"
     )
 )
 
 heart_disease_model = pickle.load(
     open(
-        "D:/Xpython/Web App/Multiple Disease Prediction System/Heart_disease_model.sav",
+        "Heart_disease_model.sav",
         "rb",
     )
 )
